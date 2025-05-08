@@ -16,8 +16,8 @@ type PsqlDB struct {
 	User string `json:"user"`
 	Password string `json:"password"`
 	DBName string `json:"db_name"`
-	DBMaxOpen string `json:"db_max_open"`
-	DBMaxIdle string `json:"db_max_idle"`
+	DBMaxOpen int `json:"db_max_open"`
+	DBMaxIdle int `json:"db_max_idle"`
 }
 
 type Config struct {
@@ -28,14 +28,14 @@ type Config struct {
 // Berfungsi untuk mengambil dan setup value yg ada di file env ke dalam struct
 func NewConfig() *Config {
 	return &Config{
-		App: App({
+		App: App{
 			AppPort: viper.GetString("APP_PORT"),
 			AppEnv: viper.GetString("APP_ENV"),
 
 			JwtSecretKey: viper.GetString("JWT_SECRET_KEY"),
 			JwtIssuer: viper.GetString("JWT_ISSUER"),
-		}),
-		Psql: PsqlDB({
+		},
+		Psql: PsqlDB{
 			Host: viper.GetString("DATABASE_HOST"),
 			Port: viper.GetString("DATABASE_PORT"),
 			User: viper.GetString("DATABASE_USER"),
@@ -43,6 +43,6 @@ func NewConfig() *Config {
 			DBName: viper.GetString("DATABASE_NAME"),
 			DBMaxOpen: viper.GetInt("DATABASE_MAX_OPEN_CONNECTION"),
 			DBMaxIdle: viper.GetInt("DATABASE_MAX_IDLE_CONNECTION"),
-		})
+		},
 	}
 }
