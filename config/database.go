@@ -1,6 +1,7 @@
 package config
 
 import (
+	"trustnews/database/seeds"
 	"fmt"
 
 	"github.com/rs/zerolog/log"
@@ -31,6 +32,8 @@ func (cfg Config) ConnectionPostgres() (*Postgres, error) {
 		log.Error().Err(err).Msg("[ConnectionPostgres-2] Failed to get a database connection")
 		return nil, err
 	}
+
+	seeds.SeedRoles(db)
 
 	sqlDB.SetMaxOpenConns(cfg.Psql.DBMaxOpen)
 	sqlDB.SetMaxIdleConns(cfg.Psql.DBMaxIdle)
