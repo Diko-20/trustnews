@@ -6,4 +6,5 @@ type Page struct {
 	PageCount int
 	TotalCount int
 	First int
+	Last int
 }

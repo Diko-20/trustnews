@@ -23,7 +23,7 @@ func (o *Options) CheckToken() func(*fiber.Ctx) error {
 		if authHandler == "" {
 			errorResponse.Meta.Status = false
 			errorResponse.Meta.Message = "Missing Authorization Header"
-			return c.Status(fiber.StatusUnauthorized).JSON()
+			return c.Status(fiber.StatusUnauthorized).JSON(errorResponse)
 		}
 
 		tokenString := strings.Split(authHandler, "Bearer ")[1]

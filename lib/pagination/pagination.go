@@ -1,6 +1,9 @@
 package pagination
 
-import "trustnews/internal/core/domain/entity"
+import (
+	"trustnews/internal/core/domain/entity"
+	"math"
+)
 
 type PaginationInterface interface {
 	AddPagination(totalData, page, per int)(*entity.Page, error)
@@ -44,7 +47,7 @@ func (o *Options) AddPagination(totalData int, page int, perPage int) (*entity.P
 		PageCount: 	totalPage,
 		TotalCount:	totalData,
 		First: 		first,
-		Last: 		last
+		Last: 		last,
 	}
 
 	return pages, nil

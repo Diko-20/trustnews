@@ -5,6 +5,6 @@ type ErrorResponseDefault struct {
 }
 
 type Meta struct {
-	Status boolen `json:"status"`
+	Status bool `json:"status"`
 	Message string `jsong:"message"`
 }
