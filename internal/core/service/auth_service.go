@@ -7,8 +7,10 @@ import (
 	"trustnews/lib/auth"
 	"trustnews/lib/conv"
 	"context"
+	"time"
 
 	"github.com/gofiber/fiber/v2/log"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 var err error
@@ -42,8 +44,8 @@ func (a *authService) GetUserByEmail(ctx context.Context, req entity.LoginReques
 		UserID: float64(result.ID),
 		RegisteredClaims: jwt.RegisteredClaims{
 			NotBefore: jwt.NewNumericDate(time.Now().Add(time.Hour *2)),
-			ID: string(result.ID)
-		}
+			ID: string(result.ID),
+		},
 	}
 
 	accessToken, expiresAt, err := a.jwtToken.GenerateToken(&jwtData)
@@ -65,6 +67,6 @@ func NewAuthService(authRepository repository.AuthRepository, cfg *config.Config
 	return &authService{
 		authRepository: authRepository,
 		cfg: cfg,
-		jwtToken: jwtToken
+		jwtToken: jwtToken,
 	}
 }

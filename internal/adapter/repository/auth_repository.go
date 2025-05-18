@@ -2,6 +2,7 @@ package repository
 
 import (
 	"trustnews/internal/core/domain/entity"
+	"trustnews/internal/core/domain/model"
 	"context"
 
 	"github.com/gofiber/fiber/v2/log"
@@ -22,7 +23,7 @@ type authRepository struct {
 func (a *authRepository) GetUserByEmail(ctx context.Context, req entity.LoginRequest) (*entity.UserEntity, error) {
 	var modelUser model.User
 
-	err - a.db.Where("email = ?", req.Email).First(&modelUser).Error
+	err = a.db.Where("email = ?", req.Email).First(&modelUser).Error
 	if err != nil {
 		code = "[REPOSITORY] GetUserByEmail - 1"
 		log.Errorw(code, err)
@@ -33,7 +34,7 @@ func (a *authRepository) GetUserByEmail(ctx context.Context, req entity.LoginReq
 		ID: modelUser.ID,
 		Name: modelUser.Name,
 		Email: modelUser.Email,
-		Password: modelUser.Password
+		Password: modelUser.Password,
 	}
 
 	return &resp, nil
