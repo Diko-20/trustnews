@@ -5,6 +5,7 @@ import (
 	"trustnews/internal/core/domain/model"
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/gofiber/fiber/v2/log"
 	"gorm.io/gorm"
@@ -18,12 +19,36 @@ type CategoryRepository interface {
 	DeleteCategory(ctx context.Context, id int64) error
 }
 
-type CategoryRepository struct {
+type categoryRepository struct {
 	db *gorm.DB
 }
 
 func (c *categoryRepository) CreateCategory(ctx context.Context, req entity.CategoryEntity) error {
-	panic("unimplemented")
+	var countSlug int64
+	err = c.db.Table("categories").Where("slug = ?", req.Slug).Count(&countSlug).Error
+	if err != nil {
+		code = "[REPOSITORY] CreateCategory - 1"
+		log.Errorw(code, err)
+		return err
+	}
+
+	countSlug = countSlug + 1
+	slug := fmt.Sprintf("%s-%d", req.Slug, countSlug)
+
+	modelCategory := model.Category{
+		Title: req.Title,
+		Slug: slug,
+		CreatedByID: req.User.ID,
+	}
+
+	err = c.db.Create(&modelCategory).Error
+	if err != nil {
+		code = "[REPOSITORY] CreateCategory - 2"
+		log.Errorw(code, err)
+		return err 
+	}
+
+	return nil
 }
 
 func (c *categoryRepository) DeleteCategory(ctx context.Context, id int64) error {
@@ -61,12 +86,12 @@ func (c *categoryRepository) GetCategories(ctx context.Context) ([]entity.Catego
 				ID: val.User.ID,
 				Name: val.User.Name,
 				Email: val.User.Email,
-				Password: val.User.Password
+				Password: val.User.Password,
 			},
 		})
 	}
 
-	return resp, nil
+	return resps, nil
 }
 
 func (c *categoryRepository) GetCategoryByID(ctx context.Context, id int64) (*entity.CategoryEntity, error) {

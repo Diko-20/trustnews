@@ -4,6 +4,8 @@ import (
 	"trustnews/internal/adapter/handler/response"
 	"trustnews/internal/core/domain/entity"
 	"trustnews/internal/core/service"
+	"trustnews/lib/validator"
+	"trustnews/internal/adapter/handler/request"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/log"
@@ -24,7 +26,58 @@ type categoryHandler struct {
 }
 
 func (ch *categoryHandler) CreateCategory(c *fiber.Ctx) error {
-	panic("unimplemented")
+	var req request.CategoryRequest
+	claims := c.Locals("user").(*entity.JwtData)
+	userID := claims.UserID
+	if userID == 0 {
+		code = "[HANDLER] CreateCategory - 1"
+		log.Errorw(code, err)
+		errorResp.Meta.Status = false
+		errorResp.Meta.Message = "Unauthorized Access"
+
+		return c.Status(fiber.StatusUnauthorized).JSON(errorResp)
+	}
+
+	if err = c.BodyParser(&req); err != nil {
+		code = "[HANDLER] CreateCategory - 2"
+		log.Errorw(code, err)
+		errorResp.Meta.Status = false
+		errorResp.Meta.Message = "Invalid Request Body"
+
+		return c.Status(fiber.StatusUnauthorized).JSON(errorResp)
+	}
+
+	if err = validatorLib.ValidateStruct(req); err != nil {
+		code = "[HANDLER] CreateCategory - 3"
+		log.Errorw(code, err)
+		errorResp.Meta.Status = false
+		errorResp.Meta.Message = err.Error()
+
+		return c.Status(fiber.StatusUnauthorized).JSON(errorResp)
+	}
+
+	reqEntity := entity.CategoryEntity{
+		Title: req.Title,
+		User: entity.UserEntity{
+			ID: int64(userID),
+		},
+	}
+
+	err = ch.categoryService.CreateCategory(c.Context(), reqEntity)
+	if err != nil {
+		code = "[HANDLER] CreateCategory - 4"
+		log.Errorw(code, err)
+		errorResp.Meta.Status = false
+		errorResp.Meta.Message = err.Error()
+
+		return c.Status(fiber.StatusUnauthorized).JSON(errorResp)
+	}
+
+	defaultSuccessReponse.Data = nil
+	defaultSuccessReponse.Pagination = nil
+	defaultSuccessReponse.Meta.Status = true
+	defaultSuccessReponse.Meta.Message = "Category Created Successfully"
+	return c.JSON(defaultSuccessReponse)
 }
 
 func (ch *categoryHandler) DeleteCategory(c *fiber.Ctx) error {
@@ -37,7 +90,7 @@ func (ch *categoryHandler) EditCategoryByID(c *fiber.Ctx) error {
 
 func (ch *categoryHandler) GetCategories(c *fiber.Ctx) error {
 	claims := c.Locals("user").(*entity.JwtData)
-	userID := claims.userID
+	userID := claims.UserID
 	if userID == 0 {
 		code = "[HANDLER] GetCategories - 1"
 		log.Errorw(code, err)
@@ -51,7 +104,7 @@ func (ch *categoryHandler) GetCategories(c *fiber.Ctx) error {
 		code = "[HANDLER] GetCategories - 2"
 		log.Errorw(code, err)
 		errorResp.Meta.Status = false
-		errorResp.Meta.Message =  "Unauthorized Access"
+		errorResp.Meta.Message =  "Invalid Request Body"
 		return c.Status(fiber.StatusUnauthorized).JSON(errorResp)
 	}
 
@@ -66,8 +119,10 @@ func (ch *categoryHandler) GetCategories(c *fiber.Ctx) error {
 
 		categoryResponses = append(categoryResponses, categoryResponse)
 	}
+	
 	defaultSuccessReponse.Meta.Status 	= true
 	defaultSuccessReponse.Meta.Message	= "Categories Fetched Successfully"
+	defaultSuccessReponse.Pagination = nil
 	defaultSuccessReponse.Data 			= categoryResponses
 
 	return c.JSON(defaultSuccessReponse)

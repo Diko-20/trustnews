@@ -36,7 +36,7 @@ func RunServer() {
 	_ = s3.NewFromConfig(cdfR2)
 
 	jwt := auth.NewJwt(cfg)
-	middlewareAuth = middleware.NewMiddleware(cfg)
+	middlewareAuth := middleware.NewMiddleware(cfg)
 
 	_ = pagination.NewPagination()
 
@@ -68,6 +68,7 @@ func RunServer() {
 	// Category
 	categoryApp := adminApp.Group("/categories")
 	categoryApp.Get("/", categoryHandler.GetCategories)
+	categoryApp.Post("/", categoryHandler.CreateCategory)
 
 	go func() {
 		if cfg.App.AppPort == "" {

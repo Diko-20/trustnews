@@ -1,6 +1,7 @@
 package service
 
 import (
+	"trustnews/lib/conv"
 	"trustnews/internal/adapter/repository"
 	"trustnews/internal/core/domain/entity"
 	"context"
@@ -21,7 +22,17 @@ type categoryService struct {
 }
 
 func (c *categoryService) CreateCategory(ctx context.Context, req entity.CategoryEntity) error {
-	panic("unimplemented")
+	slug := conv.GenerateSlug(req.Title)
+	req.Slug = slug
+
+	err = c.categoryRepository.CreateCategory(ctx, req)
+	if err != nil {
+		code = "[SERVICE] CreateCategory - 1"
+		log.Errorw(code, err)
+		return err
+	}
+
+	return nil
 }
 
 func (c *categoryService) DeleteCategory(ctx context.Context, id int64) error {
@@ -33,7 +44,7 @@ func (c *categoryService) EditCategoryByID(ctx context.Context, req entity.Categ
 }
 
 func (c *categoryService) GetCategories(ctx context.Context) ([]entity.CategoryEntity, error) {
-	results, err :-= c.categoryRepository.GetCategories(ctx)
+	results, err := c.categoryRepository.GetCategories(ctx)
 	if err != nil {
 		code = "[SERVICE] GetCategories - 1"
 		log.Errorw(code, err)
@@ -48,5 +59,5 @@ func (c *categoryService) GetCategoryByID(ctx context.Context, id int64) (*entit
 }
 
 func NewCategoryService(categoryRepo repository.CategoryRepository) CategoryService {
-	return &categoryService(categoryRepository: categoryRepo)
+	return &categoryService{categoryRepository: categoryRepo}
 }
