@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"trustnews/lib/conv"
 	"trustnews/internal/adapter/handler/response"
 	"trustnews/internal/core/domain/entity"
 	"trustnews/internal/core/service"
@@ -122,14 +123,56 @@ func (ch *categoryHandler) GetCategories(c *fiber.Ctx) error {
 	
 	defaultSuccessReponse.Meta.Status 	= true
 	defaultSuccessReponse.Meta.Message	= "Categories Fetched Successfully"
-	defaultSuccessReponse.Pagination = nil
+	defaultSuccessReponse.Pagination 	= nil
 	defaultSuccessReponse.Data 			= categoryResponses
 
 	return c.JSON(defaultSuccessReponse)
 }
 
 func (ch *categoryHandler) GetCategoryByID(c *fiber.Ctx) error {
-	panic("unimplemented")
+	claims := c.Locals("user").(*entity.JwtData)
+	userID := claims.UserID
+	if userID == 0 {
+		code = "[HANDLER] GetCategoryByID - 1"
+		log.Errorw(code, err)
+		errorResp.Meta.Status = false
+		errorResp.Meta.Message =  "Unauthorized Access"
+		return c.Status(fiber.StatusUnauthorized).JSON(errorResp)
+	}
+
+	idParam := c.Params("categoryID")
+	id, err := conv.StringToInt64(idParam)
+	if err != nil {
+		code = "[HANDLER] GetCategoryByID - 2"
+		log.Errorw(code, err)
+		errorResp.Meta.Status = false
+		errorResp.Meta.Message =  err.Error()
+
+		return c.Status(fiber.StatusBadRequest).JSON(errorResp)
+	}
+
+	result, err := ch.categoryService.GetCategoryByID(c.Context(), id)
+	if err != nil {
+		code = "[HANDLER] GetCategoryByID - 3"
+		log.Errorw(code, err)
+		errorResp.Meta.Status = false
+		errorResp.Meta.Message =  err.Error()
+		return c.Status(fiber.StatusInternalServerError).JSON(errorResp)
+	}
+
+	categoryResponse := response.SuccessCategoryResponse{
+		ID: id,
+		Title: result.Title,
+		Slug: result.Slug,
+		CreatedByName: result.User.Name,
+	}
+
+	defaultSuccessReponse.Meta.Status 	= true
+	defaultSuccessReponse.Meta.Message	= "Categories Fetched Detail Successfully"
+	defaultSuccessReponse.Pagination 	= nil
+	defaultSuccessReponse.Data 			= categoryResponse
+
+	return c.JSON(defaultSuccessReponse)
 }
 
 func NewCategoryHandler(categoryService service.CategoryService) CategoryHandler {
