@@ -1,12 +1,12 @@
 package handler
 
 import (
-	"trustnews/lib/conv"
+	"trustnews/internal/adapter/handler/request"
 	"trustnews/internal/adapter/handler/response"
 	"trustnews/internal/core/domain/entity"
 	"trustnews/internal/core/service"
-	"trustnews/lib/validator"
-	"trustnews/internal/adapter/handler/request"
+	"trustnews/lib/conv"
+	validatorLib "trustnews/lib/validator"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/log"
@@ -78,7 +78,7 @@ func (ch *categoryHandler) CreateCategory(c *fiber.Ctx) error {
 	defaultSuccessReponse.Pagination = nil
 	defaultSuccessReponse.Meta.Status = true
 	defaultSuccessReponse.Meta.Message = "Category Created Successfully"
-	return c.JSON(defaultSuccessReponse)
+	return c.Status(fiber.StatusCreated).JSON(defaultSuccessReponse)
 }
 
 func (ch *categoryHandler) DeleteCategory(c *fiber.Ctx) error {
@@ -86,7 +86,70 @@ func (ch *categoryHandler) DeleteCategory(c *fiber.Ctx) error {
 }
 
 func (ch *categoryHandler) EditCategoryByID(c *fiber.Ctx) error {
-	panic("unimplemented")
+	var req request.CategoryRequest
+	claims := c.Locals("user").(*entity.JwtData)
+	userID := claims.UserID
+	if userID == 0 {
+		code = "[HANDLER] EditCategoryByID - 1"
+		log.Errorw(code, err)
+		errorResp.Meta.Status = false
+		errorResp.Meta.Message = "Unauthorized Access"
+
+		return c.Status(fiber.StatusUnauthorized).JSON(errorResp)
+	}
+
+	if err = c.BodyParser(&req); err != nil {
+		code = "[HANDLER] EditCategoryByID - 2"
+		log.Errorw(code, err)
+		errorResp.Meta.Status = false
+		errorResp.Meta.Message = "Invalid Request Body"
+
+		return c.Status(fiber.StatusUnauthorized).JSON(errorResp)
+	}
+
+	if err = validatorLib.ValidateStruct(req); err != nil {
+		code = "[HANDLER] EditCategoryByID - 3"
+		log.Errorw(code, err)
+		errorResp.Meta.Status = false
+		errorResp.Meta.Message = err.Error()
+
+		return c.Status(fiber.StatusUnauthorized).JSON(errorResp)
+	}
+
+	idParam := c.Params("categoryID")
+	id, err := conv.StringToInt64(idParam)
+	if err != nil {
+		code = "[HANDLER] EditCategoryByID - 4"
+		log.Errorw(code, err)
+		errorResp.Meta.Status = false
+		errorResp.Meta.Message =  err.Error()
+
+		return c.Status(fiber.StatusBadRequest).JSON(errorResp)
+	}
+
+	reqEntity := entity.CategoryEntity{
+		ID: id,
+		Title: req.Title,
+		User: entity.UserEntity{
+			ID: int64(userID),
+		},
+	}
+
+	err = ch.categoryService.EditCategoryByID(c.Context(), reqEntity)
+	if err != nil {
+		code = "[HANDLER] EditCategoryByID - 5"
+		log.Errorw(code, err)
+		errorResp.Meta.Status = true
+		errorResp.Meta.Message = err.Error()
+
+		return c.Status(fiber.StatusInternalServerError).JSON(errorResp)
+	}
+
+	defaultSuccessReponse.Data = nil
+	defaultSuccessReponse.Pagination = nil
+	defaultSuccessReponse.Meta.Status = true
+	defaultSuccessReponse.Meta.Message = "Category Updated Successfully"
+	return c.JSON(defaultSuccessReponse)
 }
 
 func (ch *categoryHandler) GetCategories(c *fiber.Ctx) error {

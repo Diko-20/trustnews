@@ -1,11 +1,11 @@
 package repository
 
 import (
-	"trustnews/internal/core/domain/entity"
-	"trustnews/internal/core/domain/model"
 	"context"
 	"errors"
 	"fmt"
+	"trustnews/internal/core/domain/entity"
+	"trustnews/internal/core/domain/model"
 
 	"github.com/gofiber/fiber/v2/log"
 	"gorm.io/gorm"
@@ -56,7 +56,34 @@ func (c *categoryRepository) DeleteCategory(ctx context.Context, id int64) error
 }
 
 func (c *categoryRepository) EditCategoryByID(ctx context.Context, req entity.CategoryEntity) error {
-	panic("unimplemented")
+	var countSlug int64
+	err = c.db.Table("categories").Where("slug = ?", req.Slug).Count(&countSlug).Error
+	if err != nil {
+		code = "[REPOSITORY] EditCategoryByID - 1"
+		log.Errorw(code, err)
+		return err
+	}
+
+	countSlug = countSlug + 1
+	slug := req.Slug
+	if countSlug == 0 {
+		slug = fmt.Sprintf("%s-%d", req.Slug, countSlug)
+	}
+
+	modelCategory := model.Category{
+		Title: req.Title,
+		Slug: slug,
+		CreatedByID: req.User.ID,
+	}
+
+	err = c.db.Where("id = ?", req.ID).Updates(&modelCategory).Error
+	if err != nil {
+		code = "[REPOSITORY] EditCategoryByID - 2"
+		log.Errorw(code, err)
+		return err
+	}
+
+	return nil
 }
 
 func (c *categoryRepository) GetCategories(ctx context.Context) ([]entity.CategoryEntity, error) {

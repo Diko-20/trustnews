@@ -1,10 +1,10 @@
 package service
 
 import (
-	"trustnews/lib/conv"
+	"context"
 	"trustnews/internal/adapter/repository"
 	"trustnews/internal/core/domain/entity"
-	"context"
+	"trustnews/lib/conv"
 
 	"github.com/gofiber/fiber/v2/log"
 )
@@ -40,7 +40,28 @@ func (c *categoryService) DeleteCategory(ctx context.Context, id int64) error {
 }
 
 func (c *categoryService) EditCategoryByID(ctx context.Context, req entity.CategoryEntity) error {
-	panic("unimplemented")
+	categoryData, err := c.categoryRepository.GetCategoryByID(ctx, req.ID)
+	if err != nil {
+		code = "[SERVICE] EditCategoryByID - 1"
+		log.Errorw(code, err)
+		return err
+	}
+
+	slug := conv.GenerateSlug(req.Title)
+	if categoryData.Title == req.Title {
+		slug = categoryData.Slug
+	}
+
+	req.Slug = slug
+
+	err = c.EditCategoryByID(ctx, req)
+	if err != nil {
+		code = "[SERVICE] EditCategoryByID - 2"
+		log.Errorw(code, err)
+		return err
+	}
+
+	return nil
 }
 
 func (c *categoryService) GetCategories(ctx context.Context) ([]entity.CategoryEntity, error) {

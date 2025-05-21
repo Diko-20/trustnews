@@ -2,25 +2,25 @@ package app
 
 import (
 	"trustnews/config"
+	"trustnews/internal/adapter/handler"
+	"trustnews/internal/adapter/repository"
+	"trustnews/internal/core/service"
 	"trustnews/lib/auth"
 	"trustnews/lib/middleware"
 	"trustnews/lib/pagination"
-	"trustnews/internal/adapter/repository"
-	"trustnews/internal/adapter/handler"
-	"trustnews/internal/core/service"
 
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
-	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/gofiber/fiber/v2/middleware/recover"
 
+	"context"
 	"log"
+	"os"
 	"os/signal"
 	"syscall"
 	"time"
-	"context"
-	"os"
 )
 
 func RunServer() {
@@ -69,6 +69,7 @@ func RunServer() {
 	categoryApp := adminApp.Group("/categories")
 	categoryApp.Get("/", categoryHandler.GetCategories)
 	categoryApp.Post("/", categoryHandler.CreateCategory)
+	categoryApp.Put("/:categoryID", categoryHandler.EditCategoryByID)
 	categoryApp.Get("/:categoryID", categoryHandler.GetCategoryByID)
 
 	go func() {
