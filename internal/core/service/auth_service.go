@@ -8,6 +8,7 @@ import (
 	"trustnews/lib/conv"
 	"context"
 	"time"
+	"errors"
 
 	"github.com/gofiber/fiber/v2/log"
 	"github.com/golang-jwt/jwt/v5"
@@ -36,7 +37,8 @@ func (a *authService) GetUserByEmail(ctx context.Context, req entity.LoginReques
 
 	if checkPass := conv.CheckPasswordHash(req.Password, result.Password); !checkPass {
 		code = "[SERVICE] GetUserByEmail - 2"
-		log.Errorw(code, "Invalid Password")
+		err = errors.New("Invalid Password")
+		log.Errorw(code, err)
 		return nil, err
 	}
 

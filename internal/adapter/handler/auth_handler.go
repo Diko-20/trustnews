@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"trustnews/lib/validator"
 	"trustnews/internal/adapter/handler/request"
 	"trustnews/internal/adapter/handler/response"
 	"trustnews/internal/core/service"
@@ -37,7 +38,7 @@ func (a *authHandler) Login(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(errorResp)
 	}
 
-	if err = validate.Struct(req); err != nil {
+	if err = validatorLib.ValidateStruct(req); err != nil {
 		code = "[HANDLER] Login - 2"
 		log.Errorw(code, err)
 		errorResp.Meta.Status = false
@@ -57,6 +58,10 @@ func (a *authHandler) Login(c *fiber.Ctx) error {
 		log.Errorw(code, err)
 		errorResp.Meta.Status = false
 		errorResp.Meta.Message = err.Error()
+
+		if err.Error() == "Invalid Password" {
+			return c.Status(fiber.StatusUnauthorized).JSON(errorResp)
+		}
 
 		return c.Status(fiber.StatusInternalServerError).JSON(errorResp)
 	}
