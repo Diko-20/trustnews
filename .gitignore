@@ -9,6 +9,7 @@
 bin/
 build/
 dist/
+temp/
 
 # Folder atau file yang dibuat oleh editor/IDE
 .vscode/

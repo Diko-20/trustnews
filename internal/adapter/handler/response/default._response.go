@@ -5,19 +5,19 @@ type ErrorResponseDefault struct {
 }
 
 type Meta struct {
-	Status bool `json:"status"`
-	Message string `jsong:"message"`
+	Status  bool   `json:"status"`
+	Message string `json:"message"`
 }
 
 type DefaultSuccessReponse struct {
-	Meta 		Meta 				`json:"meta"`
-	Data 		interface{} 		`json:"data,omitempty"`
-	Pagination	*PaginationResponse	`json:"pagination,omitempty"`
+	Meta       Meta                `json:"meta"`
+	Data       interface{}         `json:"data,omitempty"`
+	Pagination *PaginationResponse `json:"pagination,omitempty"`
 }
 
 type PaginationResponse struct {
-	TotalRecords	int	`json:"total_records"`
-	Page			int `json:"page"`
-	PerPage 		int `json:"per_page"`
-	TotalPages 		int `json:"total_pages"`
+	TotalRecords int `json:"total_records"`
+	Page         int `json:"page"`
+	PerPage      int `json:"per_page"`
+	TotalPages   int `json:"total_pages"`
 }

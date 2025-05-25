@@ -80,7 +80,7 @@ func (ch *contentHandler) CreateContent(c *fiber.Ctx) error {
 		errorResp.Meta.Status = false
 		errorResp.Meta.Message = err.Error()
 
-		return c.Status(fiber.StatusBadRequest).JSON(errorResp)
+		return c.Status(fiber.StatusInternalServerError).JSON(errorResp)
 	}
 
 	defaultSuccessReponse.Meta.Status = true
@@ -339,9 +339,9 @@ func (ch *contentHandler) UploadImageR2(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(errorResp)
 	}
 
-	req.Image = fmt.Sprintf("./temp/content/$s", file.Filename)
+	req.Image = fmt.Sprintf("./temp/content/%s", file.Filename)
 	reqEntity := entity.FileUploadEntity{
-		Name: fmt.Sprintf("%d-%d", claims.UserID, time.Now().UnixNano()),
+		Name: fmt.Sprintf("%d-%d", int64(claims.UserID), time.Now().UnixNano()),
 		Path: req.Image,
 	}
 
