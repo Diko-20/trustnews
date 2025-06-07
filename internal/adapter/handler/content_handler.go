@@ -23,10 +23,148 @@ type ContentHandler interface {
 	UpdateContent(c *fiber.Ctx) error
 	DeleteContent(c *fiber.Ctx) error
 	UploadImageR2(c *fiber.Ctx) error
+
+	// FE
+	GetContentWithQuery(c *fiber.Ctx) error
+	GetContentDetail(c *fiber.Ctx) error
 }
 
 type contentHandler struct {
 	contentService service.ContentService
+}
+
+// GetContentDetail implements ContentHandler.
+func (ch *contentHandler) GetContentDetail(c *fiber.Ctx) error {
+	idParam := c.Params("contentID")
+	contentID, err := conv.StringToInt64(idParam)
+	if err != nil {
+		code = "[HANDLER] GetContentDetail - 1"
+		log.Errorw(code, err)
+		errorResp.Meta.Status = false
+		errorResp.Meta.Message = err.Error()
+
+		return c.Status(fiber.StatusBadRequest).JSON(errorResp)
+	}
+
+	result, err := ch.contentService.GetContentByID(c.Context(), contentID)
+	if err != nil {
+		code = "[HANDLER] GetContentDetail - 2"
+		log.Errorw(code, err)
+		errorResp.Meta.Status = false
+		errorResp.Meta.Message = err.Error()
+
+		return c.Status(fiber.StatusInternalServerError).JSON(errorResp)
+	}
+
+	defaultSuccessReponse.Meta.Status = true
+	defaultSuccessReponse.Meta.Message = "Success"
+
+	respContent := response.ContentResponse{
+		ID:           result.ID,
+		Title:        result.Title,
+		Excerpt:      result.Excerpt,
+		Description:  result.Description,
+		Image:        result.Image,
+		Tags:         result.Tags,
+		Status:       result.Status,
+		CategoryID:   result.CategoryID,
+		CreatedByID:  result.CreatedByID,
+		CreatedAt:    result.CreatedAt.Format(time.RFC3339),
+		CategoryName: result.Category.Title,
+		Author:       result.User.Name,
+	}
+
+	defaultSuccessReponse.Data = respContent
+	return c.JSON(defaultSuccessReponse)
+}
+
+// GetContentWithQuery implements ContentHandler.
+func (ch *contentHandler) GetContentWithQuery(c *fiber.Ctx) error {
+	page := 1
+	if c.Query("page") != "" {
+		page, err = conv.StringToInt(c.Query("page"))
+		if err != nil {
+			code := "[HANDLER] GetContentWithQuery - 1"
+			log.Errorw(code, err)
+			errorResp.Meta.Status = false
+			errorResp.Meta.Message = "Invalid Page Number"
+
+			return c.Status(fiber.StatusBadRequest).JSON(errorResp)
+		}
+	}
+
+	limit := 6
+	if c.Query("limit") != "" {
+		limit, err = conv.StringToInt(c.Query("limit"))
+		if err != nil {
+			code := "[HANDLER] GetContentWithQuery - 2"
+			log.Errorw(code, err)
+			errorResp.Meta.Status = false
+			errorResp.Meta.Message = "Invalid Limit Number"
+
+			return c.Status(fiber.StatusBadRequest).JSON(errorResp)
+		}
+	}
+
+	orderBy := "created_at"
+	if c.Query("orderBy") != "" {
+		orderBy = c.Query("orderBy")
+	}
+
+	orderType := "desc"
+	if c.Query("orderType") != "" {
+		orderType = c.Query("orderType")
+	}
+
+	search := ""
+	if c.Query("search") != "" {
+		search = c.Query("search")
+	}
+
+	reqEntity := entity.QueryString{
+		Limit:     limit,
+		Page:      page,
+		OrderBy:   orderBy,
+		OrderType: orderType,
+		Search:    search,
+		Status: "PUBLISH",
+	}
+
+	results, err := ch.contentService.GetContents(c.Context(), reqEntity)
+	if err != nil {
+		code := "[HANDLER] GetContentWithQuery - 3"
+		log.Errorw(code, err)
+		errorResp.Meta.Status = false
+		errorResp.Meta.Message = err.Error()
+
+		return c.Status(fiber.StatusInternalServerError).JSON(errorResp)
+	}
+
+	defaultSuccessReponse.Meta.Status = true
+	defaultSuccessReponse.Meta.Message = "Success"
+
+	respContents := []response.ContentResponse{}
+	for _, content := range results {
+		respContent := response.ContentResponse{
+			ID:           content.ID,
+			Title:        content.Title,
+			Excerpt:      content.Excerpt,
+			Description:  content.Description,
+			Image:        content.Image,
+			Tags:         content.Tags,
+			Status:       content.Status,
+			CategoryID:   content.CategoryID,
+			CreatedByID:  content.CreatedByID,
+			CreatedAt:    content.CreatedAt.Format(time.RFC3339),
+			CategoryName: content.Category.Title,
+			Author:       content.User.Name,
+		}
+
+		respContents = append(respContents, respContent)
+	}
+
+	defaultSuccessReponse.Data = respContents
+	return c.JSON(defaultSuccessReponse)
 }
 
 // CreateContent implements ContentHandler.
@@ -63,13 +201,13 @@ func (ch *contentHandler) CreateContent(c *fiber.Ctx) error {
 
 	tags := strings.Split(req.Tags, ",")
 	reqEntity := entity.ContentEntity{
-		Title: req.Title,
-		Excerpt: req.Excerpt,
+		Title:       req.Title,
+		Excerpt:     req.Excerpt,
 		Description: req.Description,
-		Image: req.Image,
-		Tags: tags,
-		Status: req.Status,
-		CategoryID: req.CategoryID,
+		Image:       req.Image,
+		Tags:        tags,
+		Status:      req.Status,
+		CategoryID:  req.CategoryID,
 		CreatedByID: int64(userID),
 	}
 
@@ -165,20 +303,20 @@ func (ch *contentHandler) GetContentByID(c *fiber.Ctx) error {
 
 	defaultSuccessReponse.Meta.Status = true
 	defaultSuccessReponse.Meta.Message = "Success"
-	
+
 	respContent := response.ContentResponse{
-		ID: 			result.ID,
-		Title: 			result.Title,
-		Excerpt: 		result.Excerpt,
-		Description: 	result.Description,
-		Image: 			result.Image,
-		Tags: 			result.Tags,
-		Status: 		result.Status,
-		CategoryID: 	result.CategoryID,
-		CreatedByID: 	result.CreatedByID,
-		CreatedAt: 		result.CreatedAt.Format(time.RFC3339),
-		CategoryName: 	result.Category.Title,
-		Author: 		result.User.Name,
+		ID:           result.ID,
+		Title:        result.Title,
+		Excerpt:      result.Excerpt,
+		Description:  result.Description,
+		Image:        result.Image,
+		Tags:         result.Tags,
+		Status:       result.Status,
+		CategoryID:   result.CategoryID,
+		CreatedByID:  result.CreatedByID,
+		CreatedAt:    result.CreatedAt.Format(time.RFC3339),
+		CategoryName: result.Category.Title,
+		Author:       result.User.Name,
 	}
 
 	defaultSuccessReponse.Data = respContent
@@ -197,7 +335,16 @@ func (ch *contentHandler) GetContents(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusUnauthorized).JSON(errorResp)
 	}
 
-	results, err := ch.contentService.GetContents(c.Context())
+	reqEntity := entity.QueryString{
+		Limit:      0,
+		Page:       0,
+		OrderBy:    "",
+		OrderType:  "",
+		Search:     "",
+		CategoryID: 0,
+	}
+
+	results, err := ch.contentService.GetContents(c.Context(), reqEntity)
 	if err != nil {
 		code := "[HANDLER] GetContents - 2"
 		log.Errorw(code, err)
@@ -213,18 +360,18 @@ func (ch *contentHandler) GetContents(c *fiber.Ctx) error {
 	respContents := []response.ContentResponse{}
 	for _, content := range results {
 		respContent := response.ContentResponse{
-			ID: 			content.ID,
-			Title: 			content.Title,
-			Excerpt: 		content.Excerpt,
-			Description: 	content.Description,
-			Image: 			content.Image,
-			Tags: 			content.Tags,
-			Status: 		content.Status,
-			CategoryID: 	content.CategoryID,
-			CreatedByID: 	content.CreatedByID,
-			CreatedAt: 		content.CreatedAt.Format(time.RFC3339),
-			CategoryName: 	content.Category.Title,
-			Author: 		content.User.Name,
+			ID:           content.ID,
+			Title:        content.Title,
+			Excerpt:      content.Excerpt,
+			Description:  content.Description,
+			Image:        content.Image,
+			Tags:         content.Tags,
+			Status:       content.Status,
+			CategoryID:   content.CategoryID,
+			CreatedByID:  content.CreatedByID,
+			CreatedAt:    content.CreatedAt.Format(time.RFC3339),
+			CategoryName: content.Category.Title,
+			Author:       content.User.Name,
 		}
 
 		respContents = append(respContents, respContent)
@@ -279,17 +426,17 @@ func (ch *contentHandler) UpdateContent(c *fiber.Ctx) error {
 
 	tags := strings.Split(req.Tags, ",")
 	reqEntity := entity.ContentEntity{
-		ID: contentID,
-		Title: req.Title,
-		Excerpt: req.Excerpt,
+		ID:          contentID,
+		Title:       req.Title,
+		Excerpt:     req.Excerpt,
 		Description: req.Description,
-		Image: req.Image,
-		Tags: tags,
-		Status: req.Status,
-		CategoryID: req.CategoryID,
+		Image:       req.Image,
+		Tags:        tags,
+		Status:      req.Status,
+		CategoryID:  req.CategoryID,
 		CreatedByID: int64(userID),
 	}
-	
+
 	err = ch.contentService.UpdateContent(c.Context(), reqEntity)
 	if err != nil {
 		code = "[HANDLER] UpdateContent - 5"
@@ -363,7 +510,7 @@ func (ch *contentHandler) UploadImageR2(c *fiber.Ctx) error {
 			errorResp.Meta.Status = false
 			errorResp.Meta.Message = err.Error()
 
-			return c.Status(fiber.StatusInternalServerError).JSON(errorResp) 
+			return c.Status(fiber.StatusInternalServerError).JSON(errorResp)
 		}
 	}
 
