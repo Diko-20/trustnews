@@ -27,7 +27,7 @@ go.sum
 *.pid
 
 # Environment files (sudah kamu punya, bagus!)
-.env
+# .env
 
 # OS-specific
 .DS_Store
