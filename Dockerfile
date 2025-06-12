@@ -8,7 +8,7 @@ RUN go mod download
 
 COPY . .
 
-RUN go build -0 main .
+RUN go build -o main .
 
 FROM gcr.io/distroless/base-debian10
 
