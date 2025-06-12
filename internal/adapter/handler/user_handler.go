@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"trustnews/internal/adapter/handler/request"
 	"trustnews/internal/adapter/handler/response"
 	"trustnews/internal/core/domain/entity"
@@ -86,9 +87,19 @@ func (u *userHandler) UpdatePassword(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(errorResp)
 	}
 
+	if req.ConfirmPassword != req.NewPassword {
+		code := "[HANDLER] UpdatePassword - 4"
+		err = errors.New("passwords do not match")
+		log.Errorw(code, err)
+		errorResp.Meta.Status = false
+		errorResp.Meta.Message = err.Error()
+
+		return c.Status(fiber.StatusBadRequest).JSON(errorResp)
+	}
+
 	err = u.userService.UpdatePassword(c.Context(), req.NewPassword, int64(claims.UserID))
 	if err != nil {
-		code := "[HANDLER] UpdatePassword - 4"
+		code := "[HANDLER] UpdatePassword - 5"
 		log.Errorw(code, err)
 		errorResp.Meta.Status = false
 		errorResp.Meta.Message = err.Error()
